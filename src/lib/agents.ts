@@ -1,5 +1,5 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { geminiFlash, safeJsonParse } from "./gemini";
+import { getGeminiFlash, safeJsonParse } from "./gemini";
 import { queryLegalRules, type LegalChunk } from "./pinecone";
 import {
   CONVERSATION_SYSTEM_PROMPT,
@@ -35,7 +35,7 @@ export type ConflictItem = {
 };
 
 async function chat(systemPrompt: string, userPrompt: string): Promise<string> {
-  const res = await geminiFlash.invoke([
+  const res = await getGeminiFlash().invoke([
     new SystemMessage(systemPrompt),
     new HumanMessage(userPrompt),
   ]);

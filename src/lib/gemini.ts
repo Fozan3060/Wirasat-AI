@@ -1,39 +1,68 @@
 import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  console.warn("[wirasat] GEMINI_API_KEY is not set. Agent calls will fail until it is configured in .env.local.");
+function getApiKey(): string {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) {
+    throw new Error(
+      "GEMINI_API_KEY is not set. Add it to .env.local before calling Gemini-backed endpoints."
+    );
+  }
+  return key;
 }
 
-export const geminiFlash = new ChatGoogleGenerativeAI({
-  apiKey: apiKey ?? "",
-  model: "gemini-2.0-flash",
-  temperature: 0.2,
-  maxOutputTokens: 2048,
-});
+let _flash: ChatGoogleGenerativeAI | null = null;
+let _flashCreative: ChatGoogleGenerativeAI | null = null;
+let _embeddings: GoogleGenerativeAIEmbeddings | null = null;
+let _rawGenAI: GoogleGenerativeAI | null = null;
 
-export const geminiFlashCreative = new ChatGoogleGenerativeAI({
-  apiKey: apiKey ?? "",
-  model: "gemini-2.0-flash",
-  temperature: 0.6,
-  maxOutputTokens: 1024,
-});
+export function getGeminiFlash(): ChatGoogleGenerativeAI {
+  if (!_flash) {
+    _flash = new ChatGoogleGenerativeAI({
+      apiKey: getApiKey(),
+      model: "gemini-2.0-flash",
+      temperature: 0.2,
+      maxOutputTokens: 2048,
+    });
+  }
+  return _flash;
+}
 
-export const geminiEmbeddings = new GoogleGenerativeAIEmbeddings({
-  apiKey: apiKey ?? "",
-  model: "text-embedding-004",
-});
+export function getGeminiFlashCreative(): ChatGoogleGenerativeAI {
+  if (!_flashCreative) {
+    _flashCreative = new ChatGoogleGenerativeAI({
+      apiKey: getApiKey(),
+      model: "gemini-2.0-flash",
+      temperature: 0.6,
+      maxOutputTokens: 1024,
+    });
+  }
+  return _flashCreative;
+}
 
-export const rawGenAI = new GoogleGenerativeAI(apiKey ?? "");
+export function getGeminiEmbeddings(): GoogleGenerativeAIEmbeddings {
+  if (!_embeddings) {
+    _embeddings = new GoogleGenerativeAIEmbeddings({
+      apiKey: getApiKey(),
+      model: "text-embedding-004",
+    });
+  }
+  return _embeddings;
+}
+
+export function getRawGenAI(): GoogleGenerativeAI {
+  if (!_rawGenAI) {
+    _rawGenAI = new GoogleGenerativeAI(getApiKey());
+  }
+  return _rawGenAI;
+}
 
 export async function embedText(text: string): Promise<number[]> {
-  return geminiEmbeddings.embedQuery(text);
+  return getGeminiEmbeddings().embedQuery(text);
 }
 
 export async function embedBatch(texts: string[]): Promise<number[][]> {
-  return geminiEmbeddings.embedDocuments(texts);
+  return getGeminiEmbeddings().embedDocuments(texts);
 }
 
 export function stripJsonFences(raw: string): string {
