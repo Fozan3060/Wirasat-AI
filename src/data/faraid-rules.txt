@@ -1,0 +1,44 @@
+[SECTION: Succession Act S.32]
+Under Pakistan Succession Act 1925 Section 32, a widow inherits 1/4 of the estate if the deceased left no children or descendants. If children exist, the widow receives 1/8 of the estate.
+
+[SECTION: Succession Act S.33]
+Under Pakistan Succession Act 1925 Section 33, when there is no spouse, the estate passes to lineal descendants. Sons and daughters inherit, with daughters receiving half the share of sons under Muslim personal law applied by statute.
+
+[SECTION: Succession Act S.59]
+Under Pakistan Succession Act 1925 Section 59, oral wills (verbal statements about inheritance) are NOT legally valid or enforceable in Pakistan. A will must be in writing. Any verbal arrangement made by the deceased has no legal standing.
+
+[SECTION: Sucn Act S.24]
+Under Pakistan Succession Act 1925 Section 24, all debts of the deceased must be fully paid from the estate before any distribution to heirs begins. Outstanding loans, bills, and liabilities take priority over inheritance shares.
+
+[SECTION: Succession Act S.111]
+Under Pakistan Succession Act 1925 Section 111, a person who causes the death of the deceased (murderer or abettor) is disqualified from inheriting from that person's estate.
+
+[SECTION: MFLO 1961 S.4]
+Under Muslim Family Laws Ordinance 1961 Section 4, if a son or daughter of the deceased died before the deceased, that son or daughter's children (grandchildren of deceased) are entitled to receive the share their parent would have received. This is the orphaned grandchildren protection clause.
+
+[SECTION: Shariat Application Act 1962 S.2]
+Under West Pakistan Muslim Personal Law (Shariat) Application Act 1962 Section 2, Muslim personal law (including Faraid inheritance rules) applies by statute to all Muslim citizens of Pakistan for matters of inheritance, marriage, and family. This gives statutory force to Islamic inheritance principles without requiring religious interpretation.
+
+[SECTION: Faraid — Husband's Share]
+The husband's share under Pakistani law (Shariat Application Act 1962): 1/2 of estate if deceased wife left no children. 1/4 of estate if deceased wife left children.
+
+[SECTION: Faraid — Wife's Share]
+The wife's share (or wives sharing equally) under Pakistani law: 1/4 of estate if deceased husband left no children. 1/8 of estate if deceased husband left children. Multiple wives share this portion equally among them.
+
+[SECTION: Faraid — Daughter's Share]
+Daughter's share under Pakistani law (Shariat Application Act 1962): If only one daughter and no son — 1/2 of estate. If two or more daughters and no son — 2/3 of estate shared equally. If sons exist — daughters receive half the share of each son (Asabah rule).
+
+[SECTION: Faraid — Son's Share]
+Sons are residuary heirs (Asabah) under Pakistani law. After fixed shares to spouse, parents are distributed, sons take the remainder. If multiple sons, they share equally. Each son's share is double a daughter's share when both exist.
+
+[SECTION: Faraid — Mother's Share]
+Mother's share under Pakistani law: 1/3 of estate if deceased left no children and no siblings. 1/6 of estate if deceased left children OR two or more siblings.
+
+[SECTION: Faraid — Father's Share]
+Father's share under Pakistani law: 1/6 of estate if deceased left children. If no children exist, father takes the residue after other fixed shares. Father blocks more distant male relatives from inheriting.
+
+[SECTION: Succession Act — Non-Muslim Heirs]
+Under Pakistan Succession Act 1925, non-Muslim citizens are governed by their own personal law for inheritance. A non-Muslim does not inherit under Muslim Faraid rules. The Succession Act Part II governs intestate succession for non-Muslims separately.
+
+[SECTION: Contract Act S.23 — Coercion]
+Under Contract Act 1872 Section 23, any agreement to waive or transfer inheritance rights under coercion, fraud, or undue influence is void and has no legal effect. Heirs cannot be forced to sign away their legal shares.
