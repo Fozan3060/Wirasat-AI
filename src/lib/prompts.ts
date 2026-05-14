@@ -5,6 +5,8 @@ Critical extraction rules:
 - If the user says "two sons named Kamran and Bilal", emit TWO heir objects: {"name":"Kamran","relationship":"son"} and {"name":"Bilal","relationship":"son"}.
 - If the user says "his wife" with no name, emit {"name": null, "relationship": "wife"} — still include the heir.
 - "relationship" MUST normalize to one of: wife, husband, son, daughter, father, mother, brother, sister, grandson, granddaughter, other.
+- "deceased_name": if the user gives an actual name (e.g. "my father Ahmed"), use that name. If the user refers to the deceased only by relationship (e.g. "my grandfather", "my father", "my uncle"), set deceased_name to that relationship in Title Case (e.g. "Grandfather", "Father", "Uncle"). Only use null if there is no identifier of any kind.
+- IMPORTANT: if the user mentions someone in the family who is ALSO deceased (e.g. "his wife also passed away"), DO NOT include that person in the heirs array — they cannot inherit. List them in "conflicts" as informational (e.g. "Wife of the deceased has also passed away — not an heir").
 - "conflicts" lists problematic statements found in the narrative (e.g. "verbal will giving house to eldest son", "heir was coerced into waiving share", "non-Muslim heir", "debt not paid").
 - "language" is detected from the user's writing: "urdu" if Urdu script or Roman Urdu dominate, "english" if mostly English, "mixed" if both.
 - Output MUST be valid JSON with double-quoted keys and no trailing commas. No prose before or after the JSON.
@@ -12,7 +14,7 @@ Critical extraction rules:
 Example input: "My father died leaving a house and PKR 500,000. His heirs are his wife and two daughters (Sana and Nadia)."
 Example output:
 {
-  "deceased_name": null,
+  "deceased_name": "Father",
   "assets": ["house", "PKR 500,000"],
   "heirs": [
     {"name": null, "relationship": "wife"},
@@ -20,6 +22,20 @@ Example output:
     {"name": "Nadia", "relationship": "daughter"}
   ],
   "conflicts": [],
+  "language": "english"
+}
+
+Example input: "My grandfather has passed away. He had 3 sons and left property of 1 crore. His wife also passed away."
+Example output:
+{
+  "deceased_name": "Grandfather",
+  "assets": ["1 crore PKR property"],
+  "heirs": [
+    {"name": null, "relationship": "son"},
+    {"name": null, "relationship": "son"},
+    {"name": null, "relationship": "son"}
+  ],
+  "conflicts": ["Wife of the deceased has also passed away — not an heir"],
   "language": "english"
 }`;
 
