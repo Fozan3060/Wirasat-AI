@@ -33,6 +33,7 @@ type ResultData = {
   conflicts: ConflictItem[];
   summary: string;
   language: "urdu" | "english" | "mixed";
+  incomplete?: boolean;
 };
 
 type Screen = "input" | "processing" | "results" | "error";
@@ -80,6 +81,10 @@ const UI = {
     errorTitle: "Something went wrong",
     tryAgain: "Try again",
     none: "(none)",
+    noHeirsTitle: "We need more information",
+    noHeirsBody:
+      "We couldn't identify any heirs from your description, so shares can't be calculated yet. Please go back and describe the surviving family — e.g. wife / husband, sons, daughters, father, mother, and any other living relatives.",
+    editCase: "← Edit Case",
   },
   ur: {
     title: "وراثت",
@@ -107,6 +112,10 @@ const UI = {
     errorTitle: "کچھ گڑبڑ ہو گئی",
     tryAgain: "دوبارہ کوشش کریں",
     none: "(کوئی نہیں)",
+    noHeirsTitle: "مزید معلومات درکار ہیں",
+    noHeirsBody:
+      "ہم آپ کی تفصیل سے ورثاء کی نشاندہی نہیں کر سکے، اس لیے حصوں کا حساب ابھی ممکن نہیں۔ براہ کرم واپس جائیں اور زندہ خاندانی افراد کا ذکر کریں — جیسے بیوی/شوہر، بیٹے، بیٹیاں، والد، والدہ، اور دیگر زندہ رشتہ دار۔",
+    editCase: "← کیس میں ترمیم کریں",
   },
 } as const;
 
@@ -524,34 +533,45 @@ function ResultsScreen({
       </div>
 
       <SectionHeader title={t.breakdown} />
-      <ul className="heir-list">
-        {result.heirs.map((h, i) => (
-          <li
-            key={`${h.heir_name}-${i}`}
-            className="heir-card stagger-in"
-            style={{ animationDelay: `${i * 80}ms` }}
-          >
-            <div className="heir-row">
-              <div className="heir-main">
-                <div className="heir-name">{h.heir_name}</div>
-                <div className="heir-rel">{h.relationship}</div>
+      {result.heirs.length === 0 ? (
+        <div className="empty-heirs">
+          <div className="empty-heirs-icon">⚠</div>
+          <div className="empty-heirs-title">{t.noHeirsTitle}</div>
+          <p className="empty-heirs-body">{t.noHeirsBody}</p>
+          <button type="button" className="ghost-btn" onClick={onNewCase}>
+            {t.editCase}
+          </button>
+        </div>
+      ) : (
+        <ul className="heir-list">
+          {result.heirs.map((h, i) => (
+            <li
+              key={`${h.heir_name}-${i}`}
+              className="heir-card stagger-in"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="heir-row">
+                <div className="heir-main">
+                  <div className="heir-name">{h.heir_name}</div>
+                  <div className="heir-rel">{h.relationship}</div>
+                </div>
+                <div className="heir-share">
+                  <div className="heir-fraction">{h.share_fraction}</div>
+                  <div className="heir-percent">{h.share_percent}</div>
+                </div>
               </div>
-              <div className="heir-share">
-                <div className="heir-fraction">{h.share_fraction}</div>
-                <div className="heir-percent">{h.share_percent}</div>
+              <div className="heir-bar">
+                <div
+                  className="heir-bar-fill grow-bar"
+                  style={{ width: clampPercent(h.share_percent) }}
+                />
               </div>
-            </div>
-            <div className="heir-bar">
-              <div
-                className="heir-bar-fill grow-bar"
-                style={{ width: clampPercent(h.share_percent) }}
-              />
-            </div>
-            <div className="heir-law">{h.law_reference}</div>
-            {h.calculation_notes && <div className="heir-notes">{h.calculation_notes}</div>}
-          </li>
-        ))}
-      </ul>
+              <div className="heir-law">{h.law_reference}</div>
+              {h.calculation_notes && <div className="heir-notes">{h.calculation_notes}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {result.conflicts.length > 0 && (
         <>
@@ -1047,6 +1067,33 @@ function Styles() {
         font-size: 12px;
         color: var(--text-muted);
         font-style: italic;
+      }
+      .empty-heirs {
+        background: rgba(231, 76, 60, 0.06);
+        border: 1px solid rgba(231, 76, 60, 0.4);
+        border-radius: 10px;
+        padding: 22px 22px 18px;
+        margin-bottom: 18px;
+        text-align: center;
+      }
+      .empty-heirs-icon {
+        color: var(--conflict);
+        font-size: 28px;
+        line-height: 1;
+        margin-bottom: 10px;
+      }
+      .empty-heirs-title {
+        font-family: var(--font-cormorant, Georgia, serif);
+        color: var(--conflict);
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+      .empty-heirs-body {
+        color: var(--text);
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0 0 16px;
+        opacity: 0.9;
       }
       .conflict-card {
         background: rgba(231, 76, 60, 0.06);
