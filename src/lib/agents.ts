@@ -1,9 +1,10 @@
-import { callGemini, safeJsonParse } from "./gemini";
+import { callLLM, safeJsonParse } from "./llm";
 import { queryLegalRules, type LegalChunk } from "./pinecone";
 import {
   CONVERSATION_SYSTEM_PROMPT,
-  CALCULATOR_SYSTEM_PROMPT,
-  CONFLICT_SYSTEM_PROMPT,
+  conversationSystemPrompt,
+  calculatorSystemPrompt,
+  conflictSystemPrompt,
   explainerSystemPrompt,
 } from "./prompts";
 
@@ -33,8 +34,14 @@ export type ConflictItem = {
   recommendation: string;
 };
 
-export async function collectCaseData(userMessage: string): Promise<CaseData> {
-  const raw = await callGemini(CONVERSATION_SYSTEM_PROMPT, userMessage, { jsonMode: true });
+export async function collectCaseData(
+  userMessage: string,
+  responseLanguage?: "urdu" | "english" | "mixed"
+): Promise<CaseData> {
+  const systemPrompt = responseLanguage
+    ? conversationSystemPrompt(responseLanguage)
+    : CONVERSATION_SYSTEM_PROMPT;
+  const raw = await callLLM(systemPrompt, userMessage, { jsonMode: true });
   const fallback: CaseData = {
     deceased_name: null,
     assets: null,
@@ -95,11 +102,15 @@ ${heirsBlock}
 Relevant Pakistani legal rules retrieved from the knowledge base:
 ${rulesBlock || "(no rules retrieved — apply general Faraid + Succession Act knowledge)"}
 
-Compute each heir's exact share. Return the JSON array only.`;
+Compute each heir's exact share. Return a JSON object: { "shares": [ ... ] }.`;
 
-  const raw = await callGemini(CALCULATOR_SYSTEM_PROMPT, userPrompt, { jsonMode: true });
-  const parsed = safeJsonParse<CalculatedShare[]>(raw, []);
-  return Array.isArray(parsed) ? parsed : [];
+  const language = caseData.language ?? "english";
+  const raw = await callLLM(calculatorSystemPrompt(language), userPrompt, {
+    jsonMode: true,
+    model: "gpt-4o",
+  });
+  const parsed = safeJsonParse<{ shares?: CalculatedShare[] }>(raw, {});
+  return Array.isArray(parsed?.shares) ? parsed.shares : [];
 }
 
 export async function detectConflicts(
@@ -112,11 +123,12 @@ ${JSON.stringify(caseData, null, 2)}
 Calculated shares:
 ${JSON.stringify(shares, null, 2)}
 
-Analyze for legal conflicts and issues. Return the JSON array only.`;
+Analyze for legal conflicts and issues. Return a JSON object: { "conflicts": [ ... ] }.`;
 
-  const raw = await callGemini(CONFLICT_SYSTEM_PROMPT, userPrompt, { jsonMode: true });
-  const parsed = safeJsonParse<ConflictItem[]>(raw, []);
-  return Array.isArray(parsed) ? parsed : [];
+  const language = caseData.language ?? "english";
+  const raw = await callLLM(conflictSystemPrompt(language), userPrompt, { jsonMode: true });
+  const parsed = safeJsonParse<{ conflicts?: ConflictItem[] }>(raw, {});
+  return Array.isArray(parsed?.conflicts) ? parsed.conflicts : [];
 }
 
 export async function generateExplanation(
@@ -139,7 +151,7 @@ ${conflictsSummary}
 
 Write a warm, plain-language summary (max 3 sentences) for the family.`;
 
-  const text = await callGemini(explainerSystemPrompt(language), userPrompt, {
+  const text = await callLLM(explainerSystemPrompt(language), userPrompt, {
     temperature: 0.6,
     maxOutputTokens: 2048,
   });

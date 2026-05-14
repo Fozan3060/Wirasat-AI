@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { embedBatch } from "@/lib/gemini";
+import { embedBatch } from "@/lib/llm";
 import { getIndex } from "@/lib/pinecone";
 
 export const runtime = "nodejs";
