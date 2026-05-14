@@ -1,5 +1,4 @@
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getGeminiFlash, safeJsonParse } from "./gemini";
+import { callGemini, safeJsonParse } from "./gemini";
 import { queryLegalRules, type LegalChunk } from "./pinecone";
 import {
   CONVERSATION_SYSTEM_PROMPT,
@@ -34,23 +33,8 @@ export type ConflictItem = {
   recommendation: string;
 };
 
-async function chat(systemPrompt: string, userPrompt: string): Promise<string> {
-  const res = await getGeminiFlash().invoke([
-    new SystemMessage(systemPrompt),
-    new HumanMessage(userPrompt),
-  ]);
-  const content = res.content;
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((c: any) => (typeof c === "string" ? c : c?.text ?? ""))
-      .join("");
-  }
-  return String(content ?? "");
-}
-
 export async function collectCaseData(userMessage: string): Promise<CaseData> {
-  const raw = await chat(CONVERSATION_SYSTEM_PROMPT, userMessage);
+  const raw = await callGemini(CONVERSATION_SYSTEM_PROMPT, userMessage, { jsonMode: true });
   const fallback: CaseData = {
     deceased_name: null,
     assets: null,
@@ -113,7 +97,7 @@ ${rulesBlock || "(no rules retrieved — apply general Faraid + Succession Act k
 
 Compute each heir's exact share. Return the JSON array only.`;
 
-  const raw = await chat(CALCULATOR_SYSTEM_PROMPT, userPrompt);
+  const raw = await callGemini(CALCULATOR_SYSTEM_PROMPT, userPrompt, { jsonMode: true });
   const parsed = safeJsonParse<CalculatedShare[]>(raw, []);
   return Array.isArray(parsed) ? parsed : [];
 }
@@ -130,7 +114,7 @@ ${JSON.stringify(shares, null, 2)}
 
 Analyze for legal conflicts and issues. Return the JSON array only.`;
 
-  const raw = await chat(CONFLICT_SYSTEM_PROMPT, userPrompt);
+  const raw = await callGemini(CONFLICT_SYSTEM_PROMPT, userPrompt, { jsonMode: true });
   const parsed = safeJsonParse<ConflictItem[]>(raw, []);
   return Array.isArray(parsed) ? parsed : [];
 }
@@ -155,6 +139,9 @@ ${conflictsSummary}
 
 Write a warm, plain-language summary (max 3 sentences) for the family.`;
 
-  const text = await chat(explainerSystemPrompt(language), userPrompt);
+  const text = await callGemini(explainerSystemPrompt(language), userPrompt, {
+    temperature: 0.6,
+    maxOutputTokens: 2048,
+  });
   return text.trim();
 }

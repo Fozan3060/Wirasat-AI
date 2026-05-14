@@ -1,6 +1,3 @@
-import { ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 function getApiKey(): string {
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
@@ -11,58 +8,79 @@ function getApiKey(): string {
   return key;
 }
 
-let _flash: ChatGoogleGenerativeAI | null = null;
-let _flashCreative: ChatGoogleGenerativeAI | null = null;
-let _embeddings: GoogleGenerativeAIEmbeddings | null = null;
-let _rawGenAI: GoogleGenerativeAI | null = null;
+const EMBED_MODEL = "gemini-embedding-001";
+const EMBED_DIM = 768;
+const CHAT_MODEL = "gemini-2.5-flash-lite";
 
-export function getGeminiFlash(): ChatGoogleGenerativeAI {
-  if (!_flash) {
-    _flash = new ChatGoogleGenerativeAI({
-      apiKey: getApiKey(),
-      model: "gemini-2.0-flash",
-      temperature: 0.2,
-      maxOutputTokens: 2048,
-    });
-  }
-  return _flash;
-}
+export type ChatOptions = {
+  jsonMode?: boolean;
+  temperature?: number;
+  maxOutputTokens?: number;
+};
 
-export function getGeminiFlashCreative(): ChatGoogleGenerativeAI {
-  if (!_flashCreative) {
-    _flashCreative = new ChatGoogleGenerativeAI({
-      apiKey: getApiKey(),
-      model: "gemini-2.0-flash",
-      temperature: 0.6,
-      maxOutputTokens: 1024,
-    });
-  }
-  return _flashCreative;
-}
+export async function callGemini(
+  systemPrompt: string,
+  userPrompt: string,
+  opts: ChatOptions = {}
+): Promise<string> {
+  const apiKey = getApiKey();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent?key=${apiKey}`;
 
-export function getGeminiEmbeddings(): GoogleGenerativeAIEmbeddings {
-  if (!_embeddings) {
-    _embeddings = new GoogleGenerativeAIEmbeddings({
-      apiKey: getApiKey(),
-      model: "text-embedding-004",
-    });
-  }
-  return _embeddings;
-}
+  const generationConfig: Record<string, unknown> = {
+    temperature: opts.temperature ?? 0.2,
+    maxOutputTokens: opts.maxOutputTokens ?? 2048,
+  };
+  if (opts.jsonMode) generationConfig.responseMimeType = "application/json";
 
-export function getRawGenAI(): GoogleGenerativeAI {
-  if (!_rawGenAI) {
-    _rawGenAI = new GoogleGenerativeAI(getApiKey());
+  const body: Record<string, unknown> = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig,
+  };
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Gemini generateContent failed (${res.status}): ${errText.slice(0, 400)}`);
   }
-  return _rawGenAI;
+  const data: any = await res.json();
+  const parts = data?.candidates?.[0]?.content?.parts ?? [];
+  return parts
+    .map((p: any) => (typeof p === "string" ? p : p?.text ?? ""))
+    .join("")
+    .trim();
 }
 
 export async function embedText(text: string): Promise<number[]> {
-  return getGeminiEmbeddings().embedQuery(text);
+  const apiKey = getApiKey();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${EMBED_MODEL}:embedContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      content: { parts: [{ text }] },
+      outputDimensionality: EMBED_DIM,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Gemini embedContent failed (${res.status}): ${body}`);
+  }
+  const data: any = await res.json();
+  const values: number[] | undefined = data?.embedding?.values;
+  if (!values || values.length === 0) {
+    throw new Error("Gemini embedContent returned no values");
+  }
+  return values;
 }
 
 export async function embedBatch(texts: string[]): Promise<number[][]> {
-  return getGeminiEmbeddings().embedDocuments(texts);
+  if (texts.length === 0) return [];
+  return Promise.all(texts.map((t) => embedText(t)));
 }
 
 export function stripJsonFences(raw: string): string {
