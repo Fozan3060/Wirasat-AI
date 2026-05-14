@@ -50,6 +50,44 @@ export async function POST(req: Request) {
           throw e;
         });
 
+        const heirCount = caseData.heirs?.length ?? 0;
+        if (heirCount === 0) {
+          send({ event: "agent", data: { step: 2, label: "Retrieving Pakistani law" } });
+          send({ event: "agent", data: { step: 3, label: "Calculating legal shares" } });
+          send({ event: "agent", data: { step: 4, label: "Checking for conflicts" } });
+          send({ event: "agent", data: { step: 5, label: "Generating report" } });
+
+          const language = caseData.language ?? "english";
+          const isUrdu = language === "urdu";
+          const missingInfoConflict = {
+            type: "error" as const,
+            issue: isUrdu
+              ? "ہم آپ کی تفصیل سے ورثاء کی نشاندہی نہیں کر سکے۔ براہ کرم تمام زندہ خاندانی افراد کا ذکر کریں۔"
+              : "We couldn't identify any heirs from your description. Inheritance shares cannot be calculated without knowing the surviving family.",
+            law_reference: isUrdu ? "ان پٹ نامکمل" : "Input incomplete",
+            recommendation: isUrdu
+              ? "براہ کرم بیوی/شوہر، بیٹے، بیٹیاں، والد، والدہ، اور دیگر زندہ ورثاء کا واضح طور پر ذکر کریں۔"
+              : "Please describe the surviving family — e.g. spouse, sons, daughters, father, mother — and any other living relatives. Then resubmit the case.",
+          };
+
+          send({
+            event: "result",
+            data: {
+              deceased: caseData.deceased_name,
+              assets: caseData.assets ?? [],
+              heirs: [],
+              conflicts: [missingInfoConflict],
+              summary: isUrdu
+                ? "ورثاء کی تفصیل کے بغیر حصوں کا حساب ممکن نہیں۔ براہ کرم زندہ خاندانی افراد کی فہرست شامل کریں۔"
+                : "We need to know the surviving family members before we can compute shares. Please edit the case and list the spouse, children, parents, and any other living heirs.",
+              language,
+              retrieved_rules: [],
+              incomplete: true,
+            },
+          });
+          return;
+        }
+
         send({ event: "agent", data: { step: 2, label: "Retrieving Pakistani law" } });
         const legalRules = await retrieveLegalRules(caseData).catch((e) => {
           fail(2, "Retrieving Pakistani law", e);
@@ -85,6 +123,7 @@ export async function POST(req: Request) {
             summary,
             language,
             retrieved_rules: legalRules.map((r) => ({ section: r.section, score: r.score })),
+            incomplete: false,
           },
         });
       } catch (err) {
