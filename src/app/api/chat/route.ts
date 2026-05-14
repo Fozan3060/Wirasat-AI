@@ -18,9 +18,14 @@ function encode(event: SSEEvent): Uint8Array {
 
 export async function POST(req: Request) {
   let message = "";
+  let responseLanguage: "urdu" | "english" | "mixed" | undefined;
   try {
     const body = await req.json();
     message = String(body?.message ?? "").trim();
+    const rl = body?.responseLanguage;
+    if (rl === "urdu" || rl === "english" || rl === "mixed") {
+      responseLanguage = rl;
+    }
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
@@ -45,10 +50,11 @@ export async function POST(req: Request) {
 
       try {
         send({ event: "agent", data: { step: 1, label: "Parsing case details" } });
-        const caseData = await collectCaseData(message).catch((e) => {
+        const caseData = await collectCaseData(message, responseLanguage).catch((e) => {
           fail(1, "Parsing case details", e);
           throw e;
         });
+        if (responseLanguage) caseData.language = responseLanguage;
 
         const heirCount = caseData.heirs?.length ?? 0;
         if (heirCount === 0) {

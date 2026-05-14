@@ -1,5 +1,5 @@
 import { Pinecone } from "@pinecone-database/pinecone";
-import { embedText } from "./gemini";
+import { embedText } from "./llm";
 
 const apiKey = process.env.PINECONE_API_KEY;
 const indexName = process.env.PINECONE_INDEX ?? "wirasat-kb";
