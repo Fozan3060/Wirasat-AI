@@ -265,9 +265,14 @@ export default function WirasatUI() {
   }, []);
 
   const speakSummary = useCallback(() => {
-    if (!result?.summary || typeof window === "undefined" || !window.speechSynthesis) return;
+    if (!result || typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(result.summary);
+
+    const isUrdu = result.language === "urdu";
+    const text = buildSpokenReport(result, isUrdu);
+    if (!text) return;
+
+    const utter = new SpeechSynthesisUtterance(text);
     const voiceLang =
       result.language === "urdu" ? "ur-PK" : result.language === "mixed" ? "ur-PK" : "en-US";
     utter.lang = voiceLang;
@@ -663,6 +668,46 @@ function clampPercent(raw: string): string {
   if (!match) return "0%";
   const n = Math.max(0, Math.min(100, parseFloat(match[1])));
   return `${n}%`;
+}
+
+function buildSpokenReport(result: ResultData, isUrdu: boolean): string {
+  const parts: string[] = [];
+
+  const deceasedLabel = result.deceased ?? (isUrdu ? "متوفی" : "the deceased");
+
+  if (result.heirs.length === 0) {
+    return result.summary || "";
+  }
+
+  parts.push(
+    isUrdu
+      ? `${deceasedLabel} کی وراثت کی تقسیم درج ذیل ہے۔`
+      : `Here is the inheritance distribution for ${deceasedLabel}.`
+  );
+
+  for (const h of result.heirs) {
+    const who = h.heir_name && h.heir_name.toLowerCase() !== "null"
+      ? `${h.heir_name} (${h.relationship})`
+      : h.relationship;
+    if (isUrdu) {
+      parts.push(`${who} کا حصہ ${h.share_fraction} ہے، یعنی تقریباً ${h.share_percent}۔`);
+    } else {
+      parts.push(`${who} receives ${h.share_fraction}, which is about ${h.share_percent}.`);
+    }
+  }
+
+  if (result.conflicts.length > 0) {
+    parts.push(isUrdu ? "اہم انتباہات:" : "Important warnings:");
+    for (const c of result.conflicts) {
+      parts.push(c.issue);
+    }
+  }
+
+  if (result.summary) {
+    parts.push(result.summary);
+  }
+
+  return parts.join(" ");
 }
 
 function Styles() {
